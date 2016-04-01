@@ -6,6 +6,17 @@
 			*******************************************/
 #include "include.h"//包含用户定义的头文件
 u8 adv1,adv2,adv3;
+u8 var[8];
+#define CMD_WARE     3	//虚拟示波器
+//发送至虚拟示波器
+void VIEW_send(uint8 *buff, uint32 size)//上位机	
+{
+    uint8 cmdf[2] = {CMD_WARE, ~CMD_WARE};      //串口调试 使用的前命令
+    uint8 cmdr[2] = {~CMD_WARE, CMD_WARE};      //串口调试 使用的后命令
+    uart_putbuff(UART0,cmdf, sizeof(cmdf));    //先发送前命令
+    uart_putbuff(UART0,buff, size);             //发送数据
+    uart_putbuff(UART0,cmdr, sizeof(cmdr));    //发送后命令
+}
 void AD_AVR(void)
 {
         u8 AD1[10],AD2[10],AD3[10];
@@ -16,7 +27,7 @@ void AD_AVR(void)
           AD2[i]=(u8)(126*adc_once(ADC0_SE9, ADC_8bit)/198);
           AD3[i]=(u8)(126*adc_once(ADC0_SE13, ADC_8bit)/192);
         }
-        max=0;min=255;
+        sum=0;max=0;min=255;
         for(i=0;i<=9;i++){
           sum+= AD1[i];
             if(max<AD1[i])
@@ -25,7 +36,9 @@ void AD_AVR(void)
               min=AD1[i];
         }
         adv1=(sum-max-min)/8; 
-        max=0;min=255;
+        
+        
+        sum=0;max=0;min=255;
         for(i=0;i<=9;i++){
           sum+= AD2[i];
             if(max<AD2[i])
@@ -34,7 +47,9 @@ void AD_AVR(void)
               min=AD2[i];
         }
         adv2=(sum-max-min)/8;
-        max=0;min=255;
+        
+        
+        sum=0;max=0;min=255;
         for(i=0;i<=9;i++){
           sum+= AD3[i];
             if(max<AD3[i])
@@ -43,6 +58,26 @@ void AD_AVR(void)
               min=AD3[i];
         }
         adv3=(sum-max-min)/8;
+}
+
+///卡尔曼滤波
+u8 CalmanFitterAD1(u8 dat)
+{
+    unsigned char ReturnValue;
+    ReturnValue=dat;
+    return ReturnValue;
+}
+u8 CalmanFitterAD2(u8 dat)
+{
+    unsigned char ReturnValue;
+    ReturnValue=dat;
+    return ReturnValue;
+}
+u8 CalmanFitterAD3(u8 dat)
+{
+    unsigned char ReturnValue;
+    ReturnValue=dat;
+    return ReturnValue;
 }
 void main()
 {
@@ -56,13 +91,22 @@ void main()
 	while(1)
 	{
             AD_AVR();
+            adv1=CalmanFitterAD1(adv1);
+            adv2=CalmanFitterAD2(adv2);
+            adv3=CalmanFitterAD3(adv3);
           //启用虚拟示波器
-            printf("三个电感的数据:%d,%d,%d",adv1,adv2,adv3);
-            printf("两电感之和:%d",adv1+adv3);
-            printf("两电感只差:%d",abs(adv1-adv3));
+          //  printf("三个电感的数据:%d,%d,%d",adv1,adv2,adv3);
+//printf("两电感之和:%d",adv1+adv3);
+           /// printf("两电感只差:%d",abs(adv1-adv3));
             //printf("\n\nADC转换结果：%d\r\n",ADC_data);
-            printf("\r\n");
-           DELAY_MS(500);
+           // printf("\r\n");
+           DELAY_MS(10);
+           var[0]=adv1;
+           var[1]=adv2;
+           var[2]=adv3;
+           var[3]=adv1+adv3;
+           var[4]=abs(adv1-adv3);
+           VIEW_send((uint8 *)var,sizeof(var)); //上位机
             //dianya = ADC_data*3.3/65535;
             //printf("\r\n");
 	   
