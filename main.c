@@ -8,6 +8,12 @@
 u8 adv1,adv2,adv3;
 u8 var[8];
 #define CMD_WARE     3	//虚拟示波器
+u8 FinishOfRx=0;        //串口接收数据完成
+u32 RxData;
+u8 FinishOfRead=0;
+/*卡尔曼滤波使用变量*/
+volatile u32 AdjustVar=0;//调整值
+/*********************************************/
 //发送至虚拟示波器
 void VIEW_send(uint8 *buff, uint32 size)//上位机	
 {
@@ -60,14 +66,52 @@ void AD_AVR(void)
         adv3=(sum-max-min)/8;
 }
 
-///卡尔曼滤波
-u8 CalmanFitterAD1(u8 dat)
+/*卡尔曼滤波需要设置4个值，其余均可自动调整*/
+u8 KalmanFitterAD1(u8 MeasVar)
 {
-    unsigned char ReturnValue;
-    ReturnValue=dat;
-    return ReturnValue;
+    static double PreOptimalVar=1;                       //先前最优值
+    static double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
+    static double CurOptimalVar=0;                      //当前最优值
+    #define SysNoiseCoVar         2.7182818-6
+    #define MeasNoiseCoVar        2.7182818-1           //系统噪声辅值，测量噪声辅值
+    static double CurSysCoVar=0,PreSysCoVar=30;         //当前系统辅值，先前系统辅值
+    static double KalmanGain=0;                         //卡尔曼增益
+    //先前系统最优值和先前系统辅值需要设置非零初始值；；；；
+    
+    
+    
+    /*当前估计值=先前最优值+调整值*/
+    CurEstimateVar=PreOptimalVar+AdjustVar;
+    AdjustVar=0;                //调整值的原因是加快调整
+    
+    
+    
+    /*当前系统辅值=先前系统辅值+系统噪声辅值*/
+    CurSysCoVar=PreSysCoVar+SysNoiseCoVar;
+    
+    
+    
+    /*卡尔曼增益=当前系统辅值/(当前系统辅值+测量噪声辅值)*/
+    KalmanGain=CurSysCoVar/(CurSysCoVar+MeasNoiseCoVar);
+    
+    
+    
+    
+    /*当前系统最优值=当前系统估计值+卡尔曼增益*（测量值-当前系统估计值）*/
+    CurOptimalVar=CurEstimateVar+KalmanGain*(CurMeasVar-CurEstimateVar);
+    
+    
+    
+    /*先前系统噪声辅值=（1-卡尔曼增益）x当前系统辅值*/
+    PreSysCoVar =(1-KalmanGain)*CurSysCoVar;
+    PreOptimalVar=CurOptimalVar;
+    PreSysCoVar=CurSysCoVar;
+    
+    /*返回数据*/
+    return (u8)CurOptimalVar;
+    
 }
-u8 CalmanFitterAD2(u8 dat)
+u8 KalmanFitterAD2(u8 dat)
 {
     unsigned char ReturnValue;
     ReturnValue=dat;
@@ -79,6 +123,38 @@ u8 CalmanFitterAD3(u8 dat)
     ReturnValue=dat;
     return ReturnValue;
 }
+
+
+void uart0_handler(void)
+{
+    char ch;
+
+    if(uart_query(UART0) == 1)   //接收数据寄存器满
+    {
+        //用户需要处理接收数据
+        uart_getchar   (UART0, &ch);                    //无限等待接受1个字节
+        uart_putchar   (UART0 , ch);                    //发送字符串
+        if(ch!=' '){
+          FinishOfRx=0;         //接收没有完成
+          if(FinishOfRead==1){     //读取完毕
+            RxData=RxData*10;
+            RxData+=ch-'0';
+            }
+        }else{
+            FinishOfRx = 1; //接收完成
+            printf("您输入的数据是%d\r\n",RxData);
+        }
+        
+    }
+}
+void FuzzyData(void)
+{
+}
+void FuzzyControl(void)
+{
+}
+void DisFuzzy(void)
+{}
 void main()
 {
         
@@ -88,10 +164,14 @@ void main()
 	uart_init(UART0,115200);     //初始化串口(由于 printf 函数 所用的端口就是 UART0，已经初始化了，因此此处不需要再初始化)
 	DELAY_MS(100);//上电延时
 	adc_init(ADC0_DP0);//ADC初始化
+        set_vector_handler(UART0_VECTORn,uart0_handler);   // 设置中断服务函数到中断向量表里  uart0_handler 函数添加到中断向量表，不需要我们手动调用
+        uart_rx_irq_en(UART0);
+        printf("请输入系统参数\r\n");
+        
 	while(1)
 	{
             AD_AVR();
-            adv1=CalmanFitterAD1(adv1);
+            //adv1=CalmanFitterAD1(adv1);
             adv2=CalmanFitterAD2(adv2);
             adv3=CalmanFitterAD3(adv3);
           //启用虚拟示波器
@@ -100,12 +180,13 @@ void main()
            /// printf("两电感只差:%d",abs(adv1-adv3));
             //printf("\n\nADC转换结果：%d\r\n",ADC_data);
            // printf("\r\n");
-           DELAY_MS(10);
-           var[0]=adv1;
-           var[1]=adv2;
-           var[2]=adv3;
-           var[3]=adv1+adv3;
-           var[4]=abs(adv1-adv3);
+           DELAY_MS(1);
+           var[1]=adv1;
+           //var[1]=adv2;
+           //var[2]=adv3;
+           //var[3]=adv1+adv3;
+           //var[4]=abs(adv1-adv3);
+           var[0]=KalmanFitterAD1(adv1);          //卡尔曼滤波
            VIEW_send((uint8 *)var,sizeof(var)); //上位机
             //dianya = ADC_data*3.3/65535;
             //printf("\r\n");
