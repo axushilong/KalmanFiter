@@ -70,28 +70,29 @@ void AD_AVR(void)
 u8 KalmanFitterAD1(u8 MeasVar)
 {
     static double PreOptimalVar=1;                       //先前最优值
-    static double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
-    static double CurOptimalVar=0;                      //当前最优值
-    #define SysNoiseCoVar         2.7182818-6
-    #define MeasNoiseCoVar        2.7182818-1           //系统噪声辅值，测量噪声辅值
-    static double CurSysCoVar=0,PreSysCoVar=30;         //当前系统辅值，先前系统辅值
-    static double KalmanGain=0;                         //卡尔曼增益
-    //先前系统最优值和先前系统辅值需要设置非零初始值；；；；
+    double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
+    double CurOptimalVar=0;                      //当前最优值
+    #define SysNoiseCoVar         (2.7182818-6)
+    #define MeasNoiseCoVar        (2.7182818-1)           //系统噪声协方差，测量噪声协方差
+    static double CurSysCoVar=0,PreSysCoVar=30;         //当前系统协方差，先前系统协方差
+    double KalmanGain=0;                         //卡尔曼增益
+    CurMeasVar=MeasVar;                         //当前系统测量值
+    //先前系统最优值和先前系统协方差需要设置非零初始值；；；；
     
     
     
     /*当前估计值=先前最优值+调整值*/
     CurEstimateVar=PreOptimalVar+AdjustVar;
-    AdjustVar=0;                //调整值的原因是加快调整
+    AdjustVar=0;                                //设定调整值的原因是加快调整
     
     
     
-    /*当前系统辅值=先前系统辅值+系统噪声辅值*/
+    /*当前系统协方差=先前系统协方差+系统噪声协方差*/
     CurSysCoVar=PreSysCoVar+SysNoiseCoVar;
     
     
     
-    /*卡尔曼增益=当前系统辅值/(当前系统辅值+测量噪声辅值)*/
+    /*卡尔曼增益=当前系统协方差/(当前系统协方差+测量噪声协方差)*/
     KalmanGain=CurSysCoVar/(CurSysCoVar+MeasNoiseCoVar);
     
     
@@ -102,10 +103,9 @@ u8 KalmanFitterAD1(u8 MeasVar)
     
     
     
-    /*先前系统噪声辅值=（1-卡尔曼增益）x当前系统辅值*/
+    /*先前系统噪声协方差=（1-卡尔曼增益）x当前系统协方差*/
     PreSysCoVar =(1-KalmanGain)*CurSysCoVar;
     PreOptimalVar=CurOptimalVar;
-    PreSysCoVar=CurSysCoVar;
     
     /*返回数据*/
     return (u8)CurOptimalVar;
@@ -117,13 +117,22 @@ u8 KalmanFitterAD2(u8 dat)
     ReturnValue=dat;
     return ReturnValue;
 }
-u8 CalmanFitterAD3(u8 dat)
+u8 KalmanFitterAD3(u8 dat)
 {
     unsigned char ReturnValue;
     ReturnValue=dat;
     return ReturnValue;
 }
-
+u8 Distance(u8 L)
+{
+    double h=110;
+    double k;
+    double result;
+    k=140*h;
+    result=(h*(k/L-h));
+    
+  return (u8)result;
+}
 
 void uart0_handler(void)
 {
@@ -157,12 +166,11 @@ void DisFuzzy(void)
 {}
 void main()
 {
-        
+        unsigned char A1,A2,A3;
         DisableInterrupts; //关闭中断使能
 	KEY_INIT(); 
 	LED_INIT();
 	uart_init(UART0,115200);     //初始化串口(由于 printf 函数 所用的端口就是 UART0，已经初始化了，因此此处不需要再初始化)
-	DELAY_MS(100);//上电延时
 	adc_init(ADC0_DP0);//ADC初始化
         set_vector_handler(UART0_VECTORn,uart0_handler);   // 设置中断服务函数到中断向量表里  uart0_handler 函数添加到中断向量表，不需要我们手动调用
         uart_rx_irq_en(UART0);
@@ -171,23 +179,31 @@ void main()
 	while(1)
 	{
             AD_AVR();
+            A1=(u8)(126*adc_once(ADC0_SE8,  ADC_8bit)/160);
+            A2=(u8)(126*adc_once(ADC0_SE9, ADC_8bit)/198);
+            A3=(u8)(126*adc_once(ADC0_SE13, ADC_8bit)/192);
             //adv1=CalmanFitterAD1(adv1);
-            adv2=CalmanFitterAD2(adv2);
-            adv3=CalmanFitterAD3(adv3);
+            adv2=KalmanFitterAD2(adv2);
+            adv3=KalmanFitterAD3(adv3);
+            //printf("\r\n三个电感的平均数据:      %d %d %d",adv1,adv2,adv3);
+           // printf("\r\n三个电感的立即值:        %d %d %d",A1,A2,A3);
+            //printf("\r\n中间电感的卡尔曼数据:       %d ",KalmanFitterAD1(adv2));
           //启用虚拟示波器
-          //  printf("三个电感的数据:%d,%d,%d",adv1,adv2,adv3);
-//printf("两电感之和:%d",adv1+adv3);
-           /// printf("两电感只差:%d",abs(adv1-adv3));
+           printf("\r\n三个电感的数据:%d,%d,%d",adv1,adv2,adv3);
+            printf("\r\n两电感之和:%d",adv1+adv3);
+           printf("\r\n两电感只差:%d",abs(adv1-adv3));
             //printf("\n\nADC转换结果：%d\r\n",ADC_data);
            // printf("\r\n");
-           DELAY_MS(1);
-           var[1]=adv1;
-           //var[1]=adv2;
-           //var[2]=adv3;
+          // DELAY_MS(10);
+           //var[0]=adv1;                            //原始数据
+           //var[0]=adv2;
+           //var[2]=adv3;  
            //var[3]=adv1+adv3;
            //var[4]=abs(adv1-adv3);
-           var[0]=KalmanFitterAD1(adv1);          //卡尔曼滤波
-           VIEW_send((uint8 *)var,sizeof(var)); //上位机
+           //var[1]=KalmanFitterAD1(adv2);          //卡尔曼滤波
+           //var[2]=Distance(adv2);
+           //var[3]=Distance(var[0]);
+           //VIEW_send((uint8 *)var,sizeof(var)); //上位机
             //dianya = ADC_data*3.3/65535;
             //printf("\r\n");
 	   
