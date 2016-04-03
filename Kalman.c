@@ -5,8 +5,9 @@
 			#include    "MKL_mcg.h"         //K60 时钟模块
 			*******************************************/
 #include "include.h"//包含用户定义的头文件
-
-
+#define SysNoiseCoVar         (0.0123)
+#define MeasNoiseCoVar        (16.7415926-1)           //系统噪声协方差，测量噪声协方差
+//SysNoiseCoVar越大，精度越低，速度越快MeasNoiseCovar越大，精度越高，速度越慢
 volatile u32 AdjustVar1=0;//调整值
 volatile u32 AdjustVar2=0;
 volatile u32 AdjustVar3=0;
@@ -14,12 +15,10 @@ volatile u32 AdjustVar3=0;
 u8 KalmanFitterAD1(u8 MeasVar)
 {
     static double PreOptimalVar=1;                       //先前最优值
-    double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
-    double CurOptimalVar=0;                      //当前最优值
-    #define SysNoiseCoVar         (2.7182818-6)
-    #define MeasNoiseCoVar        (2.7182818-1)           //系统噪声协方差，测量噪声协方差
+    static double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
+    static double CurOptimalVar=0;                      //当前最优值
     static double CurSysCoVar=0,PreSysCoVar=30;         //当前系统协方差，先前系统协方差
-    double KalmanGain=0;                         //卡尔曼增益
+    static double KalmanGain=0;                         //卡尔曼增益
     CurMeasVar=MeasVar;                         //当前系统测量值
     //先前系统最优值和先前系统协方差需要设置非零初始值；；；；
     
@@ -27,7 +26,7 @@ u8 KalmanFitterAD1(u8 MeasVar)
     
     /*当前估计值=先前最优值+调整值*/
     CurEstimateVar=PreOptimalVar+AdjustVar1;
-    AdjustVar1=0;                                //设定调整值的原因是加快调整
+    AdjustVar1=0;                                //设定调整值的原因是加快调整速度
     
     
     
@@ -49,7 +48,10 @@ u8 KalmanFitterAD1(u8 MeasVar)
     
     /*先前系统噪声协方差=（1-卡尔曼增益）x当前系统协方差*/
     PreSysCoVar =(1-KalmanGain)*CurSysCoVar;
-    PreOptimalVar=CurOptimalVar;
+    
+    
+    
+    PreOptimalVar=CurOptimalVar;		//递归处理当前系统最优值
     
     /*返回数据*/
     return (u8)CurOptimalVar;
@@ -58,12 +60,11 @@ u8 KalmanFitterAD1(u8 MeasVar)
 u8 KalmanFitterAD2(u8 MeasVar)
 {
     static double PreOptimalVar=1;                       //先前最优值
-    double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
-    double CurOptimalVar=0;                      //当前最优值
-    #define SysNoiseCoVar         (2.7182818-6)
-    #define MeasNoiseCoVar        (2.7182818-1)           //系统噪声协方差，测量噪声协方差
+    static double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
+    static double CurOptimalVar=0;                      //当前最优值
+
     static double CurSysCoVar=0,PreSysCoVar=30;         //当前系统协方差，先前系统协方差
-    double KalmanGain=0;                         //卡尔曼增益
+    static double KalmanGain=0;                         //卡尔曼增益
     CurMeasVar=MeasVar;                         //当前系统测量值
     //先前系统最优值和先前系统协方差需要设置非零初始值；；；；
     
@@ -103,12 +104,10 @@ u8 KalmanFitterAD2(u8 MeasVar)
 u8 KalmanFitterAD3(u8 MeasVar)
 {
     static double PreOptimalVar=1;                       //先前最优值
-    double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
-    double CurOptimalVar=0;                      //当前最优值
-    #define SysNoiseCoVar         (2.7182818-6)
-    #define MeasNoiseCoVar        (2.7182818-1)           //系统噪声协方差，测量噪声协方差
+    static double CurMeasVar=0,CurEstimateVar=0;        //当前测量值，当前预测值
+    static double CurOptimalVar=0;                      //当前最优值
     static double CurSysCoVar=0,PreSysCoVar=30;         //当前系统协方差，先前系统协方差
-    double KalmanGain=0;                         //卡尔曼增益
+    static double KalmanGain=0;                         //卡尔曼增益
     CurMeasVar=MeasVar;                         //当前系统测量值
     //先前系统最优值和先前系统协方差需要设置非零初始值；；；；
     
@@ -138,6 +137,7 @@ u8 KalmanFitterAD3(u8 MeasVar)
     
     /*先前系统噪声协方差=（1-卡尔曼增益）x当前系统协方差*/
     PreSysCoVar =(1-KalmanGain)*CurSysCoVar;
+    
     PreOptimalVar=CurOptimalVar;
     
     /*返回数据*/

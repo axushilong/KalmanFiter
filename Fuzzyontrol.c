@@ -5,13 +5,13 @@
 			#include    "MKL_mcg.h"         //K60 时钟模块
 			*******************************************/
 #include "include.h"//包含用户定义的头文件
-u32 InputClass[2]={0};	//输入
-u32 InputRatio[2]={0};
-u32 InputChangeClass[2]={0};//输入偏差
-u32 InputChangeRatio[2]={0};
-u32 IllateClass[4]={0};	//推理模糊等级
-u32 IllateRatio[4]={0};	//推理比例
-
+u32 InputData;
+u32 InputClass[2]={0};		//输入模糊等级
+u32 InputRatio[2]={0};		//输入模糊隶属度
+u32 InputChangeClass[2]={0};	//输入偏差等级
+u32 InputChangeRatio[2]={0};	//输入偏差隶属度
+u32 IllateClass[4]={0};		//推理模糊等级
+u32 IllateRatio[4]={0};		//推理比例
 //数据模糊化
 static void FuzzyData(u8 value)
 {
