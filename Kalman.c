@@ -148,7 +148,7 @@ u8 KalmanFitterAD3(u8 MeasVar)
 
 u8 Distance(u8 L,u8 M,u8 R)
 {
-	double Result=0;
+	double Length=0;
     	
-	return (u8)Result;
+	return (u8)Length;
 }
