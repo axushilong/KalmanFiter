@@ -115,9 +115,9 @@ void main()
 	while(1)
 	{
             AD_AVR();
-            A1=(u8)(126*adc_once(ADC0_SE8,  ADC_8bit)/160);
-            A2=(u8)(126*adc_once(ADC0_SE9, ADC_8bit)/198);
-            A3=(u8)(126*adc_once(ADC0_SE13, ADC_8bit)/192);
+            A1=(u8)(adc_once(ADC0_SE8,  ADC_8bit)*255/162);
+            A2=(u8)(adc_once(ADC0_SE9, ADC_8bit)*255/237);
+            A3=(u8)(adc_once(ADC0_SE13, ADC_8bit)*255/200);
             K1=KalmanFitterAD1(A1);
             K2=KalmanFitterAD2(A2);
             K3=KalmanFitterAD3(A3);

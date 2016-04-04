@@ -6,7 +6,7 @@
 			*******************************************/
 #include "include.h"//包含用户定义的头文件
 #define SysNoiseCoVar         (0.0123)
-#define MeasNoiseCoVar        (16.7415926-1)           //系统噪声协方差，测量噪声协方差
+#define MeasNoiseCoVar        (16.7415926)           //系统噪声协方差，测量噪声协方差
 //SysNoiseCoVar越大，精度越低，速度越快MeasNoiseCovar越大，精度越高，速度越慢
 volatile u32 AdjustVar1=0;//调整值
 volatile u32 AdjustVar2=0;
@@ -149,6 +149,6 @@ u8 KalmanFitterAD3(u8 MeasVar)
 u8 Distance(u8 L,u8 M,u8 R)
 {
 	double Result=0;
-    
+    	
 	return (u8)Result;
 }
