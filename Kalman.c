@@ -144,11 +144,3 @@ u8 KalmanFitterAD3(u8 MeasVar)
     return (u8)CurOptimalVar;
 }
 
-//根据三个电感数据计算偏离距离
-
-u8 Distance(u8 L,u8 M,u8 R)
-{
-	double Length=0;
-    	
-	return (u8)Length;
-}

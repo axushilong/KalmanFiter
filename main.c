@@ -18,7 +18,7 @@ u8 FinishOfRead=0;
 u8 KalmanFitterAD1(u8 MeasVar);
 u8 KalmanFitterAD2(u8 MeasVar);
 u8 KalmanFitterAD3(u8 MeasVar);
-u8 Distance(u8 L,u8 M,u8 R);
+u8 DistanceTransmit(u32 L,u32 M,u32 R);
 /*********************************************/
 //发送至虚拟示波器
 void VIEW_send(uint8 *buff, uint32 size)//上位机	
@@ -135,8 +135,8 @@ void main()
            var[3]=A1;	
            var[4]=A2;
            var[5]=A3;          
-           var[6]=Distance(K1,K2,K3);	//卡尔曼滤波后的距离
-           var[7]=Distance(A1,A2,A3);	//直接计算距离
+           var[6]=DistanceTransmit(K1,K2,K3);	//卡尔曼滤波后的距离
+           var[7]=DistanceTransmit(A1,A2,A3);	//直接计算距离
            VIEW_send((uint8 *)var,sizeof(var)); //上位机
 
 	   
