@@ -265,8 +265,18 @@ const u32 DistanceTable[256]={
 143573143,
 142625607
 };
-
-
+//快速索引时使用
+unsigned int HundredTenTable[9][10]={
+{0  ,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+{12 , 17, 21, 24, 27, 30, 32, 34, 37, 39},
+{41 , 43, 45, 47, 49, 51, 53, 55, 57, 59},
+{61 , 62, 64, 66, 68, 70, 72, 74, 76, 78},
+{79 , 81, 83, 85, 87, 89, 91, 94, 96, 98},
+{100,102,105,107,109,112,114,117,119,122},
+{125,127,130,133,136,140,143,146,150,153},
+{157,161,165,170,174,179,184,190,195,201},
+{208,214,222,230,239,248,255,255,255,255}
+};
 
 
 
@@ -276,14 +286,16 @@ const u32 DistanceTable[256]={
 u8 DistanceTransmit(u32 L,u32 M,u32 R)
 {
 	double Length=0;
-    	u32 error1=0,error2=4000000000;
-	u32 J=(L+M-R)/3;
+    	u32 error1=0,error2=4000000000;	
+	u32 Var=(L+M-R)/3;		//计算平均的电感
 	u32 i;
-	for(i=0;i<255;i++)
+	unsigned int Bai,Shi;
+	Bai=(unsigned int)Var/100000000;		//查找表中的百位
+	Shi=(unsigned int)Var%100000000/10000000;	//查找表中的十位
+	for(i=HundredTenTable[Bai][Shi];i<=HundredTenTable[Bai][Shi+1];i++)
 	{
-		error1=(u32)fabs(J-(double)DistanceTable[i]);
+		error1=(u32)fabs(Var-(double)DistanceTable[i]);
 		if(error2>error1){
-			printf("error2 %d",error2);
 			error2=error1;
 			Length =i;
 		
