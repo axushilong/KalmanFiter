@@ -19,6 +19,7 @@ u8 KalmanFitterAD1(u8 MeasVar);
 u8 KalmanFitterAD2(u8 MeasVar);
 u8 KalmanFitterAD3(u8 MeasVar);
 u8 DistanceTransmit(u32 L,u32 M,u32 R);
+int ComputMatrix(unsigned char X1,unsigned char X2,unsigned char X3);
 /*********************************************/
 //发送至虚拟示波器
 void VIEW_send(uint8 *buff, uint32 size)//上位机	
@@ -36,9 +37,9 @@ void AD_AVR(void)
         u8 i,max,min;
         u32 sum;
         for(i=0;i<=9;i++){
-          AD1[i]=(u8)(126*adc_once(ADC0_SE8,  ADC_8bit)/160);
-          AD2[i]=(u8)(126*adc_once(ADC0_SE9, ADC_8bit)/198);
-          AD3[i]=(u8)(126*adc_once(ADC0_SE13, ADC_8bit)/192);
+          AD1[i]=(u8)(240.0*(double)adc_once(ADC0_SE8,  ADC_8bit)/174.0);
+          AD2[i]=(u8)(240.0*(double)adc_once(ADC0_SE9, ADC_8bit)/210.0);
+          AD3[i]=(u8)(240.0*(double)adc_once(ADC0_SE13, ADC_8bit)/145.0);
         }
         sum=0;max=0;min=255;
         for(i=0;i<=9;i++){
@@ -116,9 +117,12 @@ void main()
 	while(1)
 	{
             AD_AVR();
-            A1=(u8)(adc_once(ADC0_SE8,  ADC_8bit)*255/162);
-            A2=(u8)(adc_once(ADC0_SE9, ADC_8bit)*255/237);
-            A3=(u8)(adc_once(ADC0_SE13, ADC_8bit)*255/200);
+            A1=(u8)(adc_once(ADC0_SE8,  ADC_8bit));
+            A2=(u8)(adc_once(ADC0_SE9, ADC_8bit));
+            A3=(u8)(adc_once(ADC0_SE12, ADC_8bit));
+	    A1=(u8)(240.0*(double)A1/174.0);
+	    A2=(u8)(240.0*(double)A2/210.0);
+	    A3=(u8)(240.0*(double)A3/145.0);
             K1=KalmanFitterAD1(A1);
             K2=KalmanFitterAD2(A2);
             K3=KalmanFitterAD3(A3);
@@ -129,14 +133,17 @@ void main()
             //printf("\n\nADC转换结果：%d\r\n",ADC_data);
            // printf("\r\n");
           DELAY_MS(10);
-           var[0]=K1;                   
-           var[1]=K2;
-           var[2]=K3;  
-           var[3]=A1;	
-           var[4]=A2;
-           var[5]=A3;          
-           var[6]=DistanceTransmit(K1,K2,K3);	//卡尔曼滤波后的距离
-           var[7]=DistanceTransmit(A1,A2,A3);	//直接计算距离
+          //平均值滤波 
+	   var[0]=adv1;    //左边电感               
+           var[1]=adv2;	//中间电感
+           var[2]=adv3;  //右边电感
+           var[3]=ComputMatrix(adv1,adv2,adv3);	
+	   //卡尔曼滤波
+	   var[4]=K1;
+	   var[5]=K2;
+           var[6]=K3;          
+           var[7]=DistanceTransmit(K1,K2,K3);	//卡尔曼滤波后的距离
+
            VIEW_send((uint8 *)var,sizeof(var)); //上位机
 
 	   

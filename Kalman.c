@@ -11,6 +11,7 @@
 volatile u32 AdjustVar1=0;//调整值
 volatile u32 AdjustVar2=0;
 volatile u32 AdjustVar3=0;
+u8 MeasMatrix[3];	//测量值矩阵
 /*卡尔曼滤波需要设置4个值，其余均可自动调整*/
 u8 KalmanFitterAD1(u8 MeasVar)
 {
