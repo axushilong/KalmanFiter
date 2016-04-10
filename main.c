@@ -137,7 +137,7 @@ void main()
 	   var[0]=K1;    //左边电感               
            var[1]=K2;	//中间电感
            var[2]=K3;  //右边电感
-           var[3]=ComputMatrix(K1,K2,K3);	
+           var[3]=(double)(1/(double)K1-1/(double)K2);	
 	   //卡尔曼滤波
 	   var[4]=K1;
 	   var[5]=K2;
