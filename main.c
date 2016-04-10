@@ -19,7 +19,7 @@ u8 KalmanFitterAD1(u8 MeasVar);
 u8 KalmanFitterAD2(u8 MeasVar);
 u8 KalmanFitterAD3(u8 MeasVar);
 u8 DistanceTransmit(u32 L,u32 M,u32 R);
-int ComputMatrix(unsigned char X1,unsigned char X2,unsigned char X3);
+u8 ComputMatrix(unsigned char X1,unsigned char X2,unsigned char X3);
 /*********************************************/
 //发送至虚拟示波器
 void VIEW_send(uint8 *buff, uint32 size)//上位机	
@@ -134,10 +134,10 @@ void main()
            // printf("\r\n");
           DELAY_MS(10);
           //平均值滤波 
-	   var[0]=adv1;    //左边电感               
-           var[1]=adv2;	//中间电感
-           var[2]=adv3;  //右边电感
-           var[3]=ComputMatrix(adv1,adv2,adv3);	
+	   var[0]=K1;    //左边电感               
+           var[1]=K2;	//中间电感
+           var[2]=K3;  //右边电感
+           var[3]=ComputMatrix(K1,K2,K3);	
 	   //卡尔曼滤波
 	   var[4]=K1;
 	   var[5]=K2;
